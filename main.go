@@ -11,5 +11,8 @@ func main() {
 			"message": "pong",
 		})
 	})
-	r.Run() // listen and serve on 0.0.0.0:8080
+	err := r.Run()
+	if err != nil {
+		panic("app run error")
+	} // listen and serve on 0.0.0.0:8080
 }

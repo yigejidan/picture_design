@@ -1,18 +1,42 @@
 package main
 
-import "github.com/gin-gonic/gin"
+import (
+	"database/sql"
+	"log"
+
+	"github.com/gin-gonic/gin"
+
+	"picture_design/common"
+	"picture_design/middleware"
+	"picture_design/routes"
+)
+
+func init() {
+	err := common.SetupSetting()
+	if err != nil {
+		log.Fatalf("init.setupSetting err: %v", err.Error())
+	}
+}
 
 func main() {
-	//Default返回一个默认的路由引擎
-	r := gin.Default()
-	r.GET("/ping", func(c *gin.Context) {
-		//输出json结果给调用方
-		c.JSON(200, gin.H{
-			"message": "pong",
-		})
-	})
-	err := r.Run()
+	db := common.InitDB()
+	sqlDB, err := db.DB()
 	if err != nil {
-		panic("app run error")
-	} // listen and serve on 0.0.0.0:8080
+		log.Fatalf("failed to connect database,err: %v", err.Error())
+	}
+	defer func(sqlDB *sql.DB) {
+		err := sqlDB.Close()
+		if err != nil {
+			log.Fatalf("failed to close database,err: %v", err.Error())
+		}
+	}(sqlDB)
+	gin.SetMode(common.SvrConfig.RunMode)
+	gin.DefaultWriter = common.LogWriter()
+	r := gin.Default()
+	r.Use(middleware.AuthMiddleware())
+	r = routes.UserRoute(r)
+	r = routes.PictureRoute(r)
+	if err := r.Run(":" + common.SvrConfig.HttpPort); err != nil {
+		log.Fatalf("failed to run,err: %v", err.Error())
+	}
 }

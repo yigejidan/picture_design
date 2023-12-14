@@ -1,9 +1,11 @@
 package controller
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"picture_design/common"
 	"picture_design/models"
@@ -15,6 +17,7 @@ type UserImpl interface {
 }
 
 type loginForm struct {
+	Name     string `form:"name" binding:"required"`
 	Password string `form:"password" binding:"required"`
 }
 
@@ -73,10 +76,6 @@ func (u *UserController) CreateUser(ctx *gin.Context) {
 }
 
 func (u *UserController) Login(ctx *gin.Context) {
-	authUser := models.CheckUserExist(ctx)
-	if authUser == nil {
-		return
-	}
 	json := loginForm{}
 	err := ctx.BindJSON(&json)
 	if err != nil {
@@ -84,7 +83,19 @@ func (u *UserController) Login(ctx *gin.Context) {
 		common.ReturnErrRes(ctx, "参数错误", http.StatusBadRequest)
 		return
 	}
-	if authUser.Password != json.Password {
+	userRepo := models.NewUserRepo()
+	dbUser, err := userRepo.GetUser(json.Name)
+	if err != nil && !errors.Is(gorm.ErrRecordNotFound, err) {
+		common.Log("%v", "CheckUserExist db GetUser,err: "+err.Error())
+		common.ReturnErrRes(ctx, "请求失败", http.StatusInternalServerError)
+		return
+	}
+	if errors.Is(gorm.ErrRecordNotFound, err) {
+		common.Log("%v", "CheckUserExist GetUser ErrRecordNotFound,err: "+err.Error())
+		common.ReturnErrRes(ctx, "账号不存在", http.StatusForbidden)
+		return
+	}
+	if dbUser.Password != json.Password {
 		common.Log("%v", "CreateUser password")
 		common.ReturnErrRes(ctx, "密码错误", http.StatusForbidden)
 		return

@@ -19,9 +19,9 @@ type PictureController struct {
 }
 
 type savePicturesForm struct {
-	Name        string `form:"name" binding:"required"`
+	Name        string `form:"name"`
 	Picture     string `form:"picture" binding:"required"`
-	Description string `form:"description" binding:"required"`
+	Description string `form:"description"`
 }
 
 func NewPicture() PictureImpl {
@@ -41,16 +41,18 @@ func (p *PictureController) SavePictures(ctx *gin.Context) {
 		common.ReturnErrRes(ctx, "参数错误", http.StatusBadRequest)
 		return
 	}
-	isDuplicate, err := models.NewPictureRepo().CheckNameIsDuplicate(authUser.Name, json.Name)
-	if err != nil {
-		common.Log("%v", "SavePictures db GetPictureByName,err: "+err.Error())
-		common.ReturnErrRes(ctx, "请求失败", http.StatusInternalServerError)
-		return
-	}
-	if isDuplicate {
-		common.Log("%v", "SavePictures name duplicate")
-		common.ReturnErrRes(ctx, "效果图名称重复", http.StatusBadRequest)
-		return
+	if json.Name != "" {
+		isDuplicate, err := models.NewPictureRepo().CheckNameIsDuplicate(authUser.Name, json.Name)
+		if err != nil {
+			common.Log("%v", "SavePictures db GetPictureByName,err: "+err.Error())
+			common.ReturnErrRes(ctx, "请求失败", http.StatusInternalServerError)
+			return
+		}
+		if isDuplicate {
+			common.Log("%v", "SavePictures name duplicate")
+			common.ReturnErrRes(ctx, "效果图名称重复", http.StatusBadRequest)
+			return
+		}
 	}
 	newPicture := models.Picture{
 		User:        authUser.Name,
@@ -64,7 +66,7 @@ func (p *PictureController) SavePictures(ctx *gin.Context) {
 		common.ReturnErrRes(ctx, "请求失败", http.StatusInternalServerError)
 		return
 	}
-	common.ReturnSuccessRes(ctx, "效果图上传成功", []int{})
+	common.ReturnSuccessRes(ctx, "效果图上传成功", map[string]uint{"id": newPicture.ID})
 }
 
 func (p *PictureController) GetPictures(ctx *gin.Context) {
@@ -72,7 +74,12 @@ func (p *PictureController) GetPictures(ctx *gin.Context) {
 	if authUser == nil {
 		return
 	}
-	name := ctx.Query("name")
+	id, err := strconv.Atoi(ctx.DefaultQuery("id", "0"))
+	if err != nil {
+		common.Log("%v", "GetPictures id is not int,err: "+err.Error())
+		common.ReturnErrRes(ctx, "参数错误", http.StatusBadRequest)
+		return
+	}
 	page, err := strconv.Atoi(ctx.DefaultQuery("page", "1"))
 	if err != nil {
 		common.Log("%v", "GetPictures page is not int,err: "+err.Error())
@@ -86,8 +93,8 @@ func (p *PictureController) GetPictures(ctx *gin.Context) {
 		return
 	}
 	var pictures *models.PictureData
-	if name != "" {
-		pictures, err = models.NewPictureRepo().GetPictureByName(authUser.Name, name)
+	if id != 0 {
+		pictures, err = models.NewPictureRepo().GetPictureById(id)
 		if err != nil {
 			common.Log("%v", "GetPictures db GetPictureByName,err: "+err.Error())
 			common.ReturnErrRes(ctx, "请求失败", http.StatusInternalServerError)

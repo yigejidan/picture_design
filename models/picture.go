@@ -29,7 +29,7 @@ type PictureData struct {
 type PictureRepoImpl interface {
 	Create(picture *Picture) error
 	GetPicturesByUser(user string, page, size int) (*PictureData, error)
-	GetPictureByName(user, name string) (*PictureData, error)
+	GetPictureById(id int) (*PictureData, error)
 	CheckNameIsDuplicate(user, name string) (bool, error)
 }
 
@@ -75,9 +75,9 @@ func (u *PictureRepo) GetPicturesByUser(user string, page, size int) (*PictureDa
 	return pictureData, nil
 }
 
-func (u *PictureRepo) GetPictureByName(user, name string) (*PictureData, error) {
+func (u *PictureRepo) GetPictureById(id int) (*PictureData, error) {
 	var pictures []*Picture
-	query := u.db.Table("pictures").Where("user = ? and name = ?", user, name)
+	query := u.db.Table("pictures").Where("id = ?", id)
 	if query.Error != nil {
 		return nil, query.Error
 	}

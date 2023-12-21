@@ -13,7 +13,7 @@ type Response struct {
 }
 
 func ReturnErrRes(ctx *gin.Context, msg string, statusCode int) {
-	ctx.JSON(statusCode, &Response{
+	ctx.AbortWithStatusJSON(statusCode, &Response{
 		Code: 0,
 		Data: []int{},
 		Msg:  msg,

@@ -63,7 +63,7 @@ func (u *PictureRepo) GetPicturesByUser(user string, page, size int) (*PictureDa
 	if res := query.Count(&total); res.Error != nil {
 		return nil, query.Error
 	}
-	if res := query.Find(&pictures).Offset(offset); res.Error != nil {
+	if res := query.Offset(offset).Limit(size).Find(&pictures); res.Error != nil {
 		return nil, res.Error
 	}
 	pictureData := &PictureData{

@@ -3,6 +3,7 @@ package controller
 import (
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -63,7 +64,7 @@ func (u *UserController) CreateUser(ctx *gin.Context) {
 	}
 	err = models.NewUserRepo().Create(&newUser)
 	if err != nil {
-		if err.Error() == "Error 1062 (23000): Duplicate entry 'test' for key 'name_index'" {
+		if strings.Contains(err.Error(), "Error 1062 (23000)") {
 			common.Log("%v", "CreateUser name duplicate,err: "+err.Error())
 			common.ReturnErrRes(ctx, "账号名称重复", http.StatusBadRequest)
 			return
@@ -79,26 +80,26 @@ func (u *UserController) Login(ctx *gin.Context) {
 	json := loginForm{}
 	err := ctx.BindJSON(&json)
 	if err != nil {
-		common.Log("%v", "CreateUser params,err: "+err.Error())
+		common.Log("%v", "Login params,err: "+err.Error())
 		common.ReturnErrRes(ctx, "参数错误", http.StatusBadRequest)
 		return
 	}
 	userRepo := models.NewUserRepo()
 	dbUser, err := userRepo.GetUser(json.Name)
 	if err != nil && !errors.Is(gorm.ErrRecordNotFound, err) {
-		common.Log("%v", "CheckUserExist db GetUser,err: "+err.Error())
+		common.Log("%v", "Login CheckUserExist db GetUser,err: "+err.Error())
 		common.ReturnErrRes(ctx, "请求失败", http.StatusInternalServerError)
 		return
 	}
 	if errors.Is(gorm.ErrRecordNotFound, err) {
-		common.Log("%v", "CheckUserExist GetUser ErrRecordNotFound,err: "+err.Error())
+		common.Log("%v", "Login CheckUserExist GetUser ErrRecordNotFound,err: "+err.Error())
 		common.ReturnErrRes(ctx, "账号不存在", http.StatusForbidden)
 		return
 	}
 	if dbUser.Password != json.Password {
-		common.Log("%v", "CreateUser password")
+		common.Log("%v", "Login password err")
 		common.ReturnErrRes(ctx, "密码错误", http.StatusForbidden)
 		return
 	}
-	common.ReturnSuccessRes(ctx, "登陆成功", []int{})
+	common.ReturnSuccessRes(ctx, "登陆成功", map[string]int{"type": dbUser.Type})
 }

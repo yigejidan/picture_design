@@ -59,7 +59,7 @@ func (u *PictureRepo) GetPicturesByUser(user string, page, size int) (*PictureDa
 		total    int64
 		offset   = (page - 1) * size
 	)
-	query := u.db.Table("pictures").Where("user = ?", user)
+	query := u.db.Table("pictures").Where("user = ? and name != ''", user)
 	if res := query.Count(&total); res.Error != nil {
 		return nil, query.Error
 	}

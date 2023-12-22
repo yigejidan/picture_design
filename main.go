@@ -7,7 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"picture_design/common"
-	"picture_design/middleware"
 	"picture_design/routes"
 )
 
@@ -33,7 +32,7 @@ func main() {
 	gin.SetMode(common.SvrConfig.RunMode)
 	gin.DefaultWriter = common.LogWriter()
 	r := gin.Default()
-	r.Use(middleware.AuthMiddleware())
+	//r.Use(middleware.AuthMiddleware())
 	r = routes.UserRoute(r)
 	r = routes.PictureRoute(r)
 	if err := r.Run(":" + common.SvrConfig.HttpPort); err != nil {

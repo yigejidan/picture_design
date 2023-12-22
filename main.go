@@ -30,7 +30,7 @@ func main() {
 		}
 	}(sqlDB)
 	gin.SetMode(common.SvrConfig.RunMode)
-	//gin.DefaultWriter = common.LogWriter()
+	gin.DefaultWriter = common.LogWriter()
 	r := gin.Default()
 	//r.Use(middleware.AuthMiddleware())
 	r = routes.UserRoute(r)

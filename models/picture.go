@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"time"
 
 	"gorm.io/gorm"
 
@@ -60,12 +59,11 @@ func (u *PictureRepo) GetPicturesByUser(user string, page, size int) (*PictureDa
 		total    int64
 		offset   = (page - 1) * size
 	)
-	start := time.Now().UnixNano() / int64(time.Millisecond)
 	query := u.db.Table("pictures").Where("user = ? and name != ''", user)
 	if res := query.Count(&total); res.Error != nil {
 		return nil, query.Error
 	}
-	if res := query.Debug().Offset(offset).Limit(size).Find(&pictures); res.Error != nil {
+	if res := query.Offset(offset).Limit(size).Find(&pictures); res.Error != nil {
 		return nil, res.Error
 	}
 	pictureData := &PictureData{
@@ -74,8 +72,6 @@ func (u *PictureRepo) GetPicturesByUser(user string, page, size int) (*PictureDa
 		Size:  int64(size),
 		Total: total,
 	}
-	end := time.Now().UnixNano() / int64(time.Millisecond)
-	println("sql执行时间", end-start)
 	return pictureData, nil
 }
 
